@@ -9,7 +9,7 @@ def openUrl(fileName):
 
 def getHtml(url):
     try:
-        res = requests.get(url)
+        res = requests.get(url,timeout=100)
     except Exception:
         print("can't get URL:  " + url)
         return None
@@ -17,10 +17,11 @@ def getHtml(url):
     return res
 
 
-def cookSoup(res,ps="html.parser"):
-    cookedSoup = bs4.BeautifulSoup(res.text,ps )
+def cookSoup(res,parser="html.parser"):
+    cookedSoup = bs4.BeautifulSoup(res.text,parser )
     return cookedSoup
 
-    
+
+
 if __name__ == "__main__":
     pass
