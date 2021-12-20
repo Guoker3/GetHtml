@@ -15,8 +15,9 @@ def CookGuanWang():
         print("url:"+url)
 
         ew=hr.ElementWeaver(soup)
-        print(ew.getTreeDepth(ew.soup))
-        print(ew.getTreeWidth(ew.soup))
+        print("depth:"+ew.getTreeDepth(ew.soup))
+        print("width"+ew.getTreeWidth(ew.soup))
+
 
         print(ew.getDepthDistance(soup.find_all("img")[0]))
         print(ew.getWidthDistance(soup.find_all("img")[0]))
