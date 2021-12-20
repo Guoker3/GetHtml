@@ -2,6 +2,10 @@
 ##TODO find  element about a pointed element
 
 import re
+import requests
+from io import BytesIO  #eable pilow to read file in the memory
+from PIL import Image
+import numpy as np
 
 class ElementWeaver:
     def __init__(self,soup):
@@ -148,21 +152,56 @@ class ElementWeaver:
 
 
 class imgTag(ElementWeaver):
-    def __init__(self,soup):
-        ElementWeaver.__init__(soup)
-        self.img=list()
+    def __init__(self,soup,url):
+        ElementWeaver.__init__(self,soup)
+        self.imgs = self.soup.find_all("img")
+        self.features=list()
+        self.url=url
 
-    def imgFilter(self):
-        #use img tag to find imagines,but ignore other forms of imagines which can be write later if neede
-        self.img=self.soup.find_all("img")
+    def readImg(self,imgElement):
+        src=imgElement["src"]
+        #combine out the url of the img
+        if src[0:7]=="http://":
+            url=src
+        elif src[0:8]=="https://":
+            url=src
+        elif src[0:2]=="//":
+            url="http:"+src
+        elif src[0:1]=="/":
+            if self.url[-1]=="/":
+                url=self.url+src[1:]
+            else:
+                url=self.url+src
+        elif src=="":
+            return None,None
+        else:
+            return None,None
+            #raise Exception ("src:  " +str(src)+ "   imagine src UNKOWN")
+        #extract information
+        ret=requests.get(url)
+        img=ret.content
+        return src,img
 
-    def featureExtracter(self):
-        pass
+    def featureExtractor(self,imgElement):
+        featureGet=dict()
+        src,img=self.readImg(imgElement)
+        if src==None:
+            return dict()
+        imgPIL = Image.open(BytesIO(img))
+        featureGet["type"] = imgPIL.mode
+        featureGet["size"] = list(imgPIL.size)
+
+        #deal with the color
+        imgRGB = imgPIL.convert("RGB")
+        rgbMat = np.array(imgRGB)
+        return featureGet
 
 if __name__=="__main__":
+    testFlag=1
+
     import HtmlSpyder as hs
     count = 1
-    ul = hs.openUrl("GuanWang")[0:5]
+    ul = hs.openUrl("GuanWang")[0:15]
     for url in ul:
         print("\ncount:" + str(count))
         count = count + 1
@@ -170,26 +209,29 @@ if __name__=="__main__":
             continue
         html = hs.getHtml(url)
         if (html is None):
-            continue
+             continue
         soup = hs.cookSoup(html)
         print("url:" + url)
-        #------------------------------------- test ElementWeaver-------------------------------------------------------
-        ew = ElementWeaver(soup)
-        print("tree depth: " + str(ew.getTreeDepth(ew.soup)))
-        print("tree line amount: " + str(ew.getTreeWidth(ew.soup)))
-        img=soup.find_all("img")
-        if img != list():
 
-            print("img 0 depth: "+str(ew.getDepthDistance(img[0])))
-            print("img 0 width: "+str(ew.getWidthDistance(img[0])))
+        if testFlag == 0:  # test elementWeaver
+            ew = ElementWeaver(soup)
+            print("tree depth: " + str(ew.getTreeDepth(ew.soup)))
+            print("tree line amount: " + str(ew.getTreeWidth(ew.soup)))
+            img=soup.find_all("img")
+            if img != list():
 
-            l=ew.getNearbySameTagAmount(img[-1])
-            print("same tag:"+str(img[-1]))
-            for i in l:
-                print("\n"+str(i))
-        else:
-            print("img not found")
+                print("img 0 depth: "+str(ew.getDepthDistance(img[0])))
+                print("img 0 width: "+str(ew.getWidthDistance(img[0])))
+
+                l=ew.getNearbySameTagAmount(img[-1])
+                print("same tag:"+str(img[-1]))
+                for i in l:
+                    print("\n"+str(i))
+            else:
+                print("img not found")
             
-
-        # print(html.text)
-        # print(ew.imgFilter(soup))
+        elif(testFlag == 1 ):    #test imgTag
+            tg=imgTag(soup,url)
+            img = soup.find_all("img")
+            if img != list():
+                print(tg.featureExtractor(img[0]))
