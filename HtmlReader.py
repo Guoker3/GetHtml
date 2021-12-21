@@ -180,13 +180,14 @@ class imgTag(ElementWeaver):
         #extract information
         ret=requests.get(url)
         img=ret.content
-        return src,img
+        return url,img
 
     def featureExtractor(self,imgElement):
         featureGet=dict()
         src,img=self.readImg(imgElement)
         if src==None:
             return dict()
+        featureGet['src']=src
         imgPIL = Image.open(BytesIO(img))
         featureGet["type"] = imgPIL.mode
         featureGet["size"] = list(imgPIL.size)
@@ -194,6 +195,50 @@ class imgTag(ElementWeaver):
         #deal with the color
         imgRGB = imgPIL.convert("RGB")
         rgbMat = np.array(imgRGB)
+        r=0
+        g=0
+        b=0
+        for h in rgbMat:
+            for w in h:
+                r=r+w[0]
+                g=g+w[1]
+                b=b+w[2]
+        size=imgPIL.size[0]*imgPIL.size[1]
+        featureGet["color"]=[r/size/255,g/size/255,b/size/255]
+
+        # imagine's color-kind it has
+        LIMIT1 = 100
+        COLORSTEP=16
+        colorSet=set()
+        hStep = imgPIL.size[1] / LIMIT1
+        wStep = imgPIL.size[0] / LIMIT1
+        for h in range(LIMIT1):
+            for w in range(LIMIT1):
+                colorSet.add(str([int(i/COLORSTEP) for i in rgbMat[int(h*hStep)][int(w*wStep)]]))
+        colorNum=len(colorSet)
+        featureGet['colorKinds']=colorNum/(int(255/COLORSTEP)**3)
+
+        #   imagine contrasts
+        # limit the size of the imagine
+        LIMIT2 = 100
+        if imgPIL.size[0] > LIMIT2 and imgPIL.size[1] > LIMIT2:
+            imgPILGray = imgPIL.resize((LIMIT2, LIMIT2))
+        elif imgPIL.size[0] > LIMIT2:
+            imgPILGray = imgPIL.resize((LIMIT2, imgPIL.size[1]))
+        else:
+            imgPILGray = imgPIL.resize((imgPIL.size[0], LIMIT2))\
+
+        imgGray = imgPIL.convert('L')
+        grayMat = np.array(imgGray)
+        shape = grayMat.shape
+        d=0
+        for h in range(shape[0]-1):
+            for w in range(shape[1]-1):
+                d=d+abs(int(grayMat[h][w])-int(grayMat[h][w+1]))
+                d=d+abs(int(grayMat[h][w])-int(grayMat[h+1][w]))
+        d=d/((shape[0]-1)*(shape[1]-1))/255
+        featureGet["contrast"]=d
+
         return featureGet
 
 if __name__=="__main__":
