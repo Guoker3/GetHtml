@@ -82,7 +82,7 @@ class ElementWeaver:
             pn=0
             pnTag=0
         else:
-            pn = element.parent.parent.contents
+            pn = len(element.parent.parent.contents)
             pnTag = 0
             for p in element.parent.parent.contents:
                 if (str(type(p)) == "<class 'bs4.element.Tag'>"):
@@ -105,6 +105,7 @@ class ElementWeaver:
                     count = count + 1
             ancestor.append([temp.parent,count])
             temp=temp.parent
+        totalLevelNumber=len(ancestor)
 
         for l in ancestor:
             inTree= l[0]
@@ -140,6 +141,7 @@ class ElementWeaver:
 
         return found
 
+
     #-------------------------functions below are defined to locate elements and its' class----------------------------
     def classFinder(self,element):
         #inline inhead inhref
@@ -151,7 +153,7 @@ class ElementWeaver:
         pass
 
 
-class imgTag(ElementWeaver):
+class ImgTag(ElementWeaver):
     def __init__(self,soup,url):
         ElementWeaver.__init__(self,soup)
         self.imgs = self.soup.find_all("img")
@@ -159,7 +161,10 @@ class imgTag(ElementWeaver):
         self.url=url
 
     def readImg(self,imgElement):
-        src=imgElement["src"]
+        try:
+            src=imgElement["src"]
+        except Exception:
+            return None,None
         #combine out the url of the img
         if src[0:7]=="http://":
             url=src
@@ -178,7 +183,10 @@ class imgTag(ElementWeaver):
             return None,None
             #raise Exception ("src:  " +str(src)+ "   imagine src UNKOWN")
         #extract information
-        ret=requests.get(url)
+        try:
+            ret=requests.get(url)
+        except Exception:
+            return None,None
         img=ret.content
         return url,img
 
@@ -241,8 +249,182 @@ class imgTag(ElementWeaver):
 
         return featureGet
 
+    def analyseNearbySameTag(self,imgElement,found):   #analyse the data found from the getNearbySameTagAmount in father class ElementWeaver
+        src,img=self.readImg(imgElement)
+        if src==None:
+            return None
+        imgElementShape=Image.open(BytesIO(img)).size
+
+        SIMILIAR=0.1
+        levelCount=dict()
+        levelSimiliarCount=dict()
+        verticalCount={'minus':0,'zero':0,'positive':0}
+        verticalSimiliarCount={'minus':0,'zero':0,'positive':0}
+        horizonCount=dict()
+        
+        similiarFoundlevel = -1
+        horizonCountInFoundLevel=dict()
+        for fd in found:
+            fdSrc,fdImg=self.readImg(fd["element"])
+            if fdSrc== None:
+                continue
+            try:
+                fdImgShape = Image.open(BytesIO(fdImg)).size
+            except Exception:
+                continue
+            if abs((imgElementShape[0]/fdImgShape[0])-1)<SIMILIAR and  abs((imgElementShape[1]/fdImgShape[1])-1)<SIMILIAR:
+                isSimiliar=True
+            else:
+                isSimiliar=False
+
+            #percentage that tags have in different levelPoint
+            try:
+                levelCount[fd["levelPoint"]] += 1
+            except Exception:
+                levelCount[fd["levelPoint"]] = 1
+            #percentage that simialr tags have in different levelPoint
+            if(isSimiliar):
+                try:
+                    levelSimiliarCount[fd["levelPoint"]] += 1
+                except Exception:
+                    levelSimiliarCount[fd["levelPoint"]] = 1
+            #percentage that tags' vertical is minus or not
+            if(fd["vertical"])<0:
+                verticalCount["minus"] += 1
+            elif(fd["vertical"])>0:
+                verticalCount["positive"] += 1
+            else:
+                verticalCount["zero"] += 1
+            #percentage that similiar tags' vertical is minus or not
+            if(isSimiliar):
+                if (fd["vertical"]) < 0:
+                    verticalSimiliarCount["minus"] += 1
+                elif (fd["vertical"]) > 0:
+                    verticalSimiliarCount["positive"] += 1
+                else:
+                    verticalSimiliarCount["zero"] += 1
+
+            #percentage that tags are far or near in horizon in all level
+            try:
+                horizonCount[abs(fd["horizon"])] += 1
+            except Exception:
+                horizonCount[abs(fd["horizon"])] = 1
+            #percentage that similiar tags are far or near in horizon in levelPoint smallest which has similiar tags ,or will be 0
+            if (similiarFoundlevel == -1):
+                if isSimiliar:
+                    similiarFoundlevel=fd["levelPoint"]
+                else:
+                    pass
+            else:
+                if similiarFoundlevel==fd["levelPoint"]:
+                    try:
+                        horizonCountInFoundLevel[abs(fd["horizon"])] += 1
+                    except Exception:
+                        horizonCountInFoundLevel[abs(fd["horizon"])] = 1
+                else:
+                    pass
+                
+        nbFeature=dict()
+        
+        #levelCount = dict()
+        levelNumber=int(len(levelCount)/2)
+        low=0
+        high=0
+        while(levelNumber>0):
+            try:
+                low+=levelCount[int(len(levelCount)/2)-levelNumber]
+            except Exception:
+                pass
+            try:
+                high+=levelCount[len(levelCount)-(int(len(levelCount)/2))+levelNumber]
+            except Exception:
+                pass
+            levelNumber-=1
+        if low+high==0:
+            nbFeature["levelDistanceLowRatio"]=0
+            nbFeature["levelDistanceHighRatio"]=0
+        else:
+            nbFeature["levelDistanceLowRatio"]=low/(low+high)
+            nbFeature["levelDistanceHighRatio"]=high/(low+high)
+
+        #levelSimiliarCount = dict()
+        levelNumber=int(len(levelSimiliarCount)/2)
+        low=0
+        high=0
+        while(levelNumber>0):
+            try:
+                low+=levelSimiliarCount[int(len(levelSimiliarCount)/2)-levelNumber]
+            except Exception:
+                pass
+            try:
+                high+=levelSimiliarCount[len(levelSimiliarCount)-(int(len(levelSimiliarCount)/2))+levelNumber]
+            except Exception:
+                pass
+            levelNumber-=1
+        if low+high==0:
+            nbFeature["levelSimiliarDistanceLowRatio"]=0
+            nbFeature["levelSimiliarDistanceHighRatio"] =0
+        else:
+            nbFeature["levelSimiliarDistanceLowRatio"]=low/(low+high)
+            nbFeature["levelSimiliarDistanceHighRatio"] = high / (low + high)
+        #verticalCount = dict
+        sum=verticalCount["minus"]+verticalCount["zero"]+verticalCount["positive"]
+        if sum==0:
+            sum=1
+        nbFeature["verticalZeroRatio"]=verticalCount["zero"]/sum
+        nbFeature["verticalMinusRatio"]=verticalCount["minus"]/sum
+        nbFeature["verticalPositiveRatio"]=verticalCount["positive"]/sum
+        #verticalSimiliarCount = dict()
+        sum=verticalSimiliarCount["minus"]+verticalSimiliarCount["zero"]+verticalSimiliarCount["positive"]
+        if sum==0:
+            sum=1
+        nbFeature["verticalSimiliarZeroRatio"]=verticalSimiliarCount["zero"]/sum
+        nbFeature["verticalSimiliarMinusRatio"]=verticalSimiliarCount["minus"]/sum
+        nbFeature["verticalSimiliarPositiveRatio"]=verticalSimiliarCount["positive"]/sum
+        #horizonCount = dict()
+        horizonNumber = int(len(horizonCount) / 2)
+        low = 0
+        high = 0
+        while (horizonNumber > 0):
+            try:
+                low += horizonCount[int(len(horizonCount) / 2) - horizonNumber]
+            except Exception:
+                pass
+            try:
+                high += horizonCount[len(horizonCount) - (int(len(horizonCount) / 2)) + horizonNumber]
+            except Exception:
+                pass
+            horizonNumber -= 1
+        if low+high==0:
+            nbFeature["horizonDistanceCloserRatio"] = 0
+            nbFeature["horizonDistanceFatherRatio"] = 0
+        else:
+            nbFeature["horizonDistanceCloserRatio"] = low / (low+high)
+            nbFeature["horizonDistanceFatherRatio"] = high / (low + high)
+        #horizonCountInFoundLevel = dict()
+        horizonNumber = int(len(horizonCountInFoundLevel) / 2)
+        low = 0
+        high = 0
+        while (horizonNumber > 0):
+            try:
+                low += horizonCountInFoundLevel[int(len(horizonCountInFoundLevel) / 2) - horizonNumber]
+            except Exception:
+                pass
+            try:
+                high += horizonCountInFoundLevel[len(horizonCountInFoundLevel) - (int(len(horizonCountInFoundLevel) / 2)) + horizonNumber]
+            except Exception:
+                pass
+            horizonNumber -= 1
+        if low+high ==0:
+            nbFeature["horizonDistanceInFoundLevelCloserRatio"] = 0
+            nbFeature["horizonDistanceInFoundLevelFatherRatio"] = 0
+        else:
+            nbFeature["horizonDistanceInFoundLevelCloserRatio"] = low / (low+high)
+            nbFeature["horizonDistanceInFoundLevelFatherRatio"] = high / (low + high)
+        return nbFeature
+
 if __name__=="__main__":
-    testFlag=1
+    testFlag="2"
 
     import HtmlSpyder as hs
     count = 1
@@ -258,13 +440,13 @@ if __name__=="__main__":
         soup = hs.cookSoup(html)
         print("url:" + url)
 
-        if testFlag == 0:  # test elementWeaver
+        if "1" in testFlag:  # test elementWeaver
             ew = ElementWeaver(soup)
             print("tree depth: " + str(ew.getTreeDepth(ew.soup)))
             print("tree line amount: " + str(ew.getTreeWidth(ew.soup)))
             img=soup.find_all("img")
             if img != list():
-
+                print("[cn,cnTag,sn,snTag,pn,pnTag]:  "+str(ew.getNearbyAmount(img[0])))
                 print("img 0 depth: "+str(ew.getDepthDistance(img[0])))
                 print("img 0 width: "+str(ew.getWidthDistance(img[0])))
 
@@ -275,8 +457,10 @@ if __name__=="__main__":
             else:
                 print("img not found")
             
-        elif(testFlag == 1 ):    #test imgTag
-            tg=imgTag(soup,url)
+        if("2" in testFlag):    #test imgTag
+            tg=ImgTag(soup,url)
             img = soup.find_all("img")
             if img != list():
                 print(tg.featureExtractor(img[0]))
+                found= tg.getNearbySameTagAmount(img[-1])
+                print(tg.analyseNearbySameTag(img[0],found))
