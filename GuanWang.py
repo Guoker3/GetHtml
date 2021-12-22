@@ -17,21 +17,26 @@ def CookGuanWang():
         imgTag=hr.ImgTag(soup,url)
         totalDepth=imgTag.getDepthDistance(imgTag.soup)
         totalWidth=imgTag.getTreeWidth(imgTag.soup)
-        for img in imgs:
-            features=dict()
-            features["websiteUrl"]=url
-            features["depth"]=imgTag.getDepthDistance(img)/totalDepth
-            features["width"]=imgTag.getWidthDistance(img)/totalWidth
-
-        ew=hr.ElementWeaver(soup)
-        print("depth:"+ew.getTreeDepth(ew.soup))
-        print("width"+ew.getTreeWidth(ew.soup))
-
-
-        print(ew.getDepthDistance(soup.find_all("img")[0]))
-        print(ew.getWidthDistance(soup.find_all("img")[0]))
-        #print(html.text)
-        #print(ew.imgFilter(soup))
-
+        if imgs!=list():
+            for img in imgs:
+                features=dict()
+                features["websiteUrl"]=url
+                features["depth"]=imgTag.getDepthDistance(img)/totalDepth
+                features["width"]=imgTag.getWidthDistance(img)/totalWidth
+                imgFeature=imgTag.featureExtractor(img)
+                if imgFeature==None:
+                    continue
+                features.update(imgFeature)
+                found = imgTag.getNearbySameTagAmount(img)
+                nearbyFeature=imgTag.analyseNearbySameTag(img, found)
+                if nearbyFeature==None:
+                    continue
+                features.update(nearbyFeature)
+                nearbyAmountFeature=imgTag.getNearbyAmount(img)
+                if nearbyAmountFeature==None:
+                    continue
+                features.update(nearbyAmountFeature)
+                print(features)
+                #wash and save to file
 if __name__=="__main__":
     CookGuanWang()

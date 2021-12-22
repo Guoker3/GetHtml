@@ -88,7 +88,7 @@ class ElementWeaver:
                 if (str(type(p)) == "<class 'bs4.element.Tag'>"):
                     pnTag = pnTag + 1
 
-        return [cn,cnTag,sn,snTag,pn,pnTag]
+        return {"childNumber":cn,"childTagNumber":cnTag,"siblingNumber":sn,"siblingTagNumber":snTag,"uncleNumber":pn,"uncleTagNumber":pnTag}
 
     #showed in the feature set by a coefficient describing the preference that has similar element nearby
     def getNearbySameTagAmount(self,element):   #search the same tag element ,record itself and its related position
@@ -194,11 +194,14 @@ class ImgTag(ElementWeaver):
         featureGet=dict()
         src,img=self.readImg(imgElement)
         if src==None:
-            return dict()
+            return None
         featureGet['src']=src
-        imgPIL = Image.open(BytesIO(img))
+        try:
+            imgPIL = Image.open(BytesIO(img))
+        except Exception:
+            return None
         featureGet["type"] = imgPIL.mode
-        featureGet["size"] = list(imgPIL.size)
+        featureGet["shape"] = list(imgPIL.size)
 
         #deal with the color
         imgRGB = imgPIL.convert("RGB")
