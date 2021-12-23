@@ -8,7 +8,7 @@ def CookGuanWang():
     controlFlag.append("save")
     ul=hs.openUrl("GuanWang")
     datasetName="GuanWangRaw2_firstTry.csv"
-    f=open(datasetName,"a+")
+    f=open("../dataset/"+datasetName,"a+")
     writer=csv.writer(f)
     featureName=["embeddedDepth","lineNumber","imgWidth","imgHeight","red","green","blue","colorVariety","contrast"]
     featureName.extend(["levelDistanceLowRatio", "levelDistanceHighRatio", "levelSimiliarDistanceLowRatio", "levelSimiliarDistanceHighRatio"])
@@ -17,9 +17,9 @@ def CookGuanWang():
     featureName.extend(['childNumber', 'childTagNumber', 'siblingNumber', 'siblingTagNumber', 'uncleNumber','uncleTagNumber'])
     writer.writerow(featureName)
     for url in ul:
-        print(time.strftime("Day%d %H:%M:%S",time.localtime()), "\t", url)
         if (url == ""):
             continue
+        print(time.strftime("Day%d %H:%M:%S", time.localtime()), "\t", url)
         html=hs.getHtml(url)
         if(html is None):
             continue
