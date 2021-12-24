@@ -202,7 +202,7 @@ class ImgTag(ElementWeaver):
             return None
         featureGet["type"] = imgPIL.mode
         featureGet["shape"] = list(imgPIL.size)
-
+        featureGet["widthHeightRatio"]=featureGet["shape"][0]/featureGet["shape"][1]
         #deal with the color
         imgRGB = imgPIL.convert("RGB")
         rgbMat = np.array(imgRGB)

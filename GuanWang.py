@@ -10,7 +10,7 @@ def CookGuanWang():
     datasetName="GuanWangRaw2_firstTry.csv"
     f=open("../dataset/"+datasetName,"a+")
     writer=csv.writer(f)
-    featureName=["embeddedDepth","lineNumber","imgWidth","imgHeight","red","green","blue","colorVariety","contrast"]
+    featureName=["embeddedDepth","lineNumber","imgWidth","imgHeight","widthHeightRatio","red","green","blue","colorVariety","contrast"]
     featureName.extend(["levelDistanceLowRatio", "levelDistanceHighRatio", "levelSimiliarDistanceLowRatio", "levelSimiliarDistanceHighRatio"])
     featureName.extend(['verticalZeroRatio', 'verticalMinusRatio', 'verticalPositiveRatio', 'verticalSimiliarZeroRatio','verticalSimiliarMinusRatio', 'verticalSimiliarPositiveRatio'])
     featureName.extend(['horizonDistanceCloserRatio', 'horizonDistanceFatherRatio','horizonDistanceInFoundLevelCloserRatio', 'horizonDistanceInFoundLevelFatherRatio'])
@@ -55,7 +55,7 @@ def CookGuanWang():
                 #wash and save to file
                 if "save" in controlFlag:
                     featureWashed=list()
-                    featureWashed.extend([features['depth'],features['width'],features['shape'][0],features['shape'][1],features['color'][0],features['color'][1],features['color'][2],features['colorKinds'],features['contrast']])
+                    featureWashed.extend([features['depth'],features['width'],features['shape'][0],features['shape'][1],features["widthHeightRatio"],features['color'][0],features['color'][1],features['color'][2],features['colorKinds'],features['contrast']])
                     featureWashed.extend([features['levelDistanceLowRatio'], features['levelDistanceHighRatio'], features['levelSimiliarDistanceLowRatio'], features['levelSimiliarDistanceHighRatio'], features['verticalZeroRatio'], features['verticalMinusRatio']])
                     featureWashed.extend([features['verticalPositiveRatio'], features['verticalSimiliarZeroRatio'], features['verticalSimiliarMinusRatio'], features['verticalSimiliarPositiveRatio']])                    
                     featureWashed.extend([features['horizonDistanceCloserRatio'],features['horizonDistanceFatherRatio'],features['horizonDistanceInFoundLevelCloserRatio'], features['horizonDistanceInFoundLevelFatherRatio']])
