@@ -1,7 +1,7 @@
 web url should be in the form of https://.... /
 
 dataset:
-    Raw2:  type of CSV with one-line head,haven't completely normalized
+    Raw2:  type of CSV with one-line head,haven't completely normalized.
 
 data reflect:
-    for convinience ,just use data natualy a percent,and leave complex reflect later
+    for convinience ,just use data natualy a percent,and leave complex reflect later,you can do it with an independently class to avoid the information loss when format the dataset.(attention:the realistic feature connection between element and canvas is a hand-made work,because the web is similiar with the canvas but not is .that also means that data and rules both can be get in other way.)
