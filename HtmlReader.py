@@ -427,11 +427,11 @@ class ImgTag(ElementWeaver):
         return nbFeature
 
 if __name__=="__main__":
-    testFlag="2"
+    testFlag="1"+"2"
 
     import HtmlSpyder as hs
     count = 1
-    ul = hs.openUrl("GuanWang")[0:15]
+    ul = hs.openUrl("GuanWang")[0:3]
     for url in ul:
         print("\ncount:" + str(count))
         count = count + 1
