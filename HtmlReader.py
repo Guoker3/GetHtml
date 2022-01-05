@@ -91,6 +91,7 @@ class ElementWeaver:
         return {"childNumber":cn,"childTagNumber":cnTag,"siblingNumber":sn,"siblingTagNumber":snTag,"uncleNumber":pn,"uncleTagNumber":pnTag}
 
     #showed in the feature set by a coefficient describing the preference that has similar element nearby
+    #ｉｇｎｏｒｅ　ｔｈｅ　ａｍｏｕｎｔ　ｉｎ　ｔｈｅ　ｆｕｎｃｔｉｏｎ　ｎａｍｅ　
     def getNearbySameTagAmount(self,element):   #search the same tag element ,record itself and its related position
         levelPoint=-1
         ancestor=[[element,0],]     #[ancestor,ancestors next position towards element]
